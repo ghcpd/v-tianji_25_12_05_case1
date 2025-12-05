@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
+import SearchResultItem from './SearchResultItem';
 
 interface SearchResult {
   id: number;
@@ -110,84 +111,9 @@ export default function SearchComponent({ onLoadComplete }: SearchComponentProps
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        {results.map((result) => {
-          const computeRelevance = () => {
-            const startTime = performance.now();
-            let relevance = result.relevance;
-            for (let i = 0; i < 5000; i++) {
-              relevance = Math.sqrt(relevance * Math.random());
-            }
-            const endTime = performance.now();
-            performanceMonitor.logOperation('computeRelevance', 'SearchComponent', endTime - startTime, 'computation');
-            return relevance;
-          };
-          const computedRelevance = computeRelevance();
-          
-          return (
-          <div
-            key={result.id}
-            style={{
-              border: '1px solid #eee',
-              borderRadius: '8px',
-              padding: '15px',
-              transition: 'background 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.background = '#f9f9f9';
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.background = 'white';
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '10px' }}>
-              <div>
-                <div style={{ fontWeight: 'bold', fontSize: '18px', marginBottom: '5px' }}>{result.title}</div>
-                <div style={{ fontSize: '14px', color: '#666' }}>{result.description}</div>
-              </div>
-              <span style={{
-                background: result.type === 'user' ? '#667eea' : result.type === 'post' ? '#48bb78' : '#ed8936',
-                color: 'white',
-                padding: '4px 8px',
-                borderRadius: '4px',
-                fontSize: '12px',
-                textTransform: 'uppercase'
-              }}>
-                {result.type}
-              </span>
-            </div>
-            <div style={{ display: 'flex', gap: '15px', fontSize: '12px', color: '#888', marginTop: '10px' }}>
-              <span>By: {result.metadata.author}</span>
-              <span>{new Date(result.metadata.date).toLocaleDateString()}</span>
-              <span>Relevance: {(computedRelevance * 100).toFixed(1)}%</span>
-            </div>
-            <div style={{ marginTop: '10px' }}>
-              {result.metadata.tags.slice(0, 5).map((tag, idx) => (
-                <span key={idx} style={{
-                  background: '#eee',
-                  padding: '4px 8px',
-                  borderRadius: '4px',
-                  fontSize: '12px',
-                  marginRight: '5px'
-                }}>
-                  {tag}
-                </span>
-              ))}
-            </div>
-            {result.related && result.related.length > 0 && (
-              <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid #eee' }}>
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '10px', fontWeight: 'bold' }}>Related:</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
-                  {result.related.map((related) => (
-                    <div key={related.id} style={{ fontSize: '12px', color: '#888' }}>
-                      {related.title}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-          );
-        })}
+        {results.map((result) => (
+          <SearchResultItem key={result.id} result={result} />
+        ))}
       </div>
     </div>
   );
