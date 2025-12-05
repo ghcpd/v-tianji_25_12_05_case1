@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import api from '@/lib/api';
-import { performanceMonitor } from '@/lib/performance';
+import React, { useState, useEffect } from 'react';
+import api from '../lib/api';
+import { performanceMonitor } from '../lib/performance';
 
 interface AnalyticsData {
   date: string;
@@ -35,6 +35,7 @@ export default function AnalyticsDashboard({ onLoadComplete }: AnalyticsDashboar
   const [days, setDays] = useState(30);
   const [metric, setMetric] = useState('all');
   const [aggregated, setAggregated] = useState<any>(null);
+  const [visibleRows, setVisibleRows] = useState<number>(10);
 
   const fetchAnalytics = async (daysCount: number, metricType: string) => {
     setLoading(true);
@@ -72,24 +73,25 @@ export default function AnalyticsDashboard({ onLoadComplete }: AnalyticsDashboar
     };
   }, [analytics, loading, aggregated]);
 
-  const calculateMetrics = () => {
-    const startTime = performance.now();
-    if (!analytics.length) return null;
-    
-    const calculations = analytics.map(item => {
-      let result = 0;
-      for (let i = 0; i < 10000; i++) {
-        result += Math.sqrt(item.visitors * item.pageViews) / (i + 1);
-      }
-      return result;
-    });
-    
-    const endTime = performance.now();
-    performanceMonitor.logOperation('calculateMetrics', 'AnalyticsDashboard', endTime - startTime, 'computation');
-    return calculations;
-  };
+  const [metrics, setMetrics] = React.useState<number[] | null>(null);
 
-  const metrics = calculateMetrics();
+  React.useEffect(() => {
+    if (!analytics.length) {
+      setMetrics(null);
+      return;
+    }
+    const handle = setTimeout(() => {
+      const startTime = performance.now();
+      const calculations = analytics.map(item => Math.sqrt(item.visitors * item.pageViews));
+      const endTime = performance.now();
+      performanceMonitor.logOperation('calculateMetrics', 'AnalyticsDashboard', endTime - startTime, 'computation');
+      setMetrics(calculations);
+    }, 0);
+
+    return () => clearTimeout(handle);
+  }, [analytics]);
+
+  const formattedDates = React.useMemo(() => analytics.map(item => new Date(item.date).toLocaleDateString()), [analytics]);
 
   return (
     <div style={{ background: 'white', borderRadius: '8px', padding: '20px', marginBottom: '20px' }}>
@@ -165,23 +167,10 @@ export default function AnalyticsDashboard({ onLoadComplete }: AnalyticsDashboar
             </tr>
           </thead>
           <tbody>
-            {analytics.map((item: AnalyticsData, idx: number) => {
-              const formatDate = () => {
-                const startTime = performance.now();
-                const formatted = new Date(item.date).toLocaleDateString();
-                for (let i = 0; i < 1000; i++) {
-                  formatted.split('/').join('-');
-                }
-                const endTime = performance.now();
-                if (idx === 0) {
-                  performanceMonitor.logOperation('formatDate', 'AnalyticsDashboard', endTime - startTime, 'computation');
-                }
-                return formatted;
-              };
-              
+            {analytics.slice(0, visibleRows).map((item: AnalyticsData, idx: number) => {
               return (
               <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px' }}>{formatDate()}</td>
+                <td style={{ padding: '12px' }}>{formattedDates[idx]}</td>
                 <td style={{ padding: '12px', textAlign: 'right' }}>{item.visitors.toLocaleString()}</td>
                 <td style={{ padding: '12px', textAlign: 'right' }}>{item.pageViews.toLocaleString()}</td>
                 <td style={{ padding: '12px', textAlign: 'right' }}>{(item.bounceRate * 100).toFixed(1)}%</td>
@@ -194,6 +183,13 @@ export default function AnalyticsDashboard({ onLoadComplete }: AnalyticsDashboar
           </tbody>
         </table>
       </div>
+      {analytics.length > visibleRows && (
+        <div style={{ marginTop: '12px', textAlign: 'center' }}>
+          <button onClick={() => setVisibleRows(analytics.length)} style={{ padding: '8px 12px', borderRadius: '4px', border: 'none', background: '#667eea', color: 'white' }}>
+            Show all ({analytics.length})
+          </button>
+        </div>
+      )}
     </div>
   );
 }
