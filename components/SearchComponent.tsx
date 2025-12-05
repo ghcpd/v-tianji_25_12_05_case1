@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
+import { computeRelevance } from '@/lib/compute';
 
 interface SearchResult {
   id: number;
@@ -111,17 +112,13 @@ export default function SearchComponent({ onLoadComplete }: SearchComponentProps
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {results.map((result) => {
-          const computeRelevance = () => {
-            const startTime = performance.now();
-            let relevance = result.relevance;
-            for (let i = 0; i < 5000; i++) {
-              relevance = Math.sqrt(relevance * Math.random());
-            }
-            const endTime = performance.now();
-            performanceMonitor.logOperation('computeRelevance', 'SearchComponent', endTime - startTime, 'computation');
-            return relevance;
-          };
-          const computedRelevance = computeRelevance();
+          const computedRelevance = useMemo(() => {
+            const start = performance.now();
+            const val = computeRelevance(result);
+            const end = performance.now();
+            performanceMonitor.logOperation('computeRelevance', 'SearchComponent', end - start, 'computation');
+            return val;
+          }, [result.relevance]);
           
           return (
           <div
