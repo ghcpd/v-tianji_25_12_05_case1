@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
+import { computeRelevanceValue } from '@/lib/compute';
 
 interface SearchResult {
   id: number;
@@ -70,10 +71,9 @@ export default function SearchComponent({ onLoadComplete }: SearchComponentProps
 
   useEffect(() => {
     const endRender = performanceMonitor.startRender('SearchComponent');
-    return () => {
-      endRender();
-    };
-  }, [results, loading, query]);
+    return () => endRender();
+    // only track renders when results change
+  }, [results]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const startTime = performance.now();
@@ -81,6 +81,17 @@ export default function SearchComponent({ onLoadComplete }: SearchComponentProps
     const endTime = performance.now();
     performanceMonitor.logOperation('inputChange', 'SearchComponent', endTime - startTime, 'event');
   };
+
+  // Memoize heavy relevance computation so it's only recalculated when results change
+  const processedResults = useMemo(() => {
+    return results.map((result) => {
+      const startTime = performance.now();
+      const relevance = computeRelevanceValue(result.relevance, 200);
+      const endTime = performance.now();
+      performanceMonitor.logOperation('computeRelevance', 'SearchComponent', endTime - startTime, 'computation');
+      return { ...result, computedRelevance: relevance };
+    });
+  }, [results]);
 
   return (
     <div style={{ background: 'white', borderRadius: '8px', padding: '20px', marginBottom: '20px' }}>
@@ -110,18 +121,8 @@ export default function SearchComponent({ onLoadComplete }: SearchComponentProps
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-        {results.map((result) => {
-          const computeRelevance = () => {
-            const startTime = performance.now();
-            let relevance = result.relevance;
-            for (let i = 0; i < 5000; i++) {
-              relevance = Math.sqrt(relevance * Math.random());
-            }
-            const endTime = performance.now();
-            performanceMonitor.logOperation('computeRelevance', 'SearchComponent', endTime - startTime, 'computation');
-            return relevance;
-          };
-          const computedRelevance = computeRelevance();
+        {processedResults.map((result) => {
+            const computedRelevance = result.computedRelevance ?? result.relevance;
           
           return (
           <div

@@ -204,7 +204,9 @@ export const dataService = {
 
     await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 100));
     
-    const allResults = generateSearchResults(query, 1000);
+    // Generate only the amount we need to satisfy the requested limit (plus a small buffer)
+    const generateCount = Math.max(limit * 2, 40);
+    const allResults = generateSearchResults(query, generateCount);
     const results = allResults.slice(0, limit);
 
     for (const result of results) {

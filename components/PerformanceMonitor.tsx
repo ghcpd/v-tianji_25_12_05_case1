@@ -18,10 +18,18 @@ export default function PerformanceMonitor() {
   const [stats, setStats] = useState(performanceMonitor.getStatistics());
 
   useEffect(() => {
+    let lastCount = -1;
+    let lastStats = null as any;
     const interval = setInterval(() => {
-      setLogs([...performanceMonitor.getLogs()]);
-      setStats(performanceMonitor.getStatistics());
-    }, 1000);
+      const currentLogs = performanceMonitor.getLogs();
+      const currentStats = performanceMonitor.getStatistics();
+      if (currentLogs.length !== lastCount || JSON.stringify(currentStats) !== JSON.stringify(lastStats)) {
+        lastCount = currentLogs.length;
+        lastStats = currentStats;
+        setLogs([...currentLogs]);
+        setStats(currentStats);
+      }
+    }, 2000);
 
     return () => clearInterval(interval);
   }, []);
