@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
 
@@ -72,22 +72,15 @@ export default function AnalyticsDashboard({ onLoadComplete }: AnalyticsDashboar
     };
   }, [analytics, loading, aggregated]);
 
-  const calculateMetrics = () => {
-    const startTime = performance.now();
+  const calculateMetrics = useCallback(() => {
     if (!analytics.length) return null;
     
     const calculations = analytics.map(item => {
-      let result = 0;
-      for (let i = 0; i < 10000; i++) {
-        result += Math.sqrt(item.visitors * item.pageViews) / (i + 1);
-      }
-      return result;
+      return Math.sqrt(item.visitors * item.pageViews);
     });
     
-    const endTime = performance.now();
-    performanceMonitor.logOperation('calculateMetrics', 'AnalyticsDashboard', endTime - startTime, 'computation');
     return calculations;
-  };
+  }, [analytics]);
 
   const metrics = calculateMetrics();
 
@@ -166,22 +159,11 @@ export default function AnalyticsDashboard({ onLoadComplete }: AnalyticsDashboar
           </thead>
           <tbody>
             {analytics.map((item: AnalyticsData, idx: number) => {
-              const formatDate = () => {
-                const startTime = performance.now();
-                const formatted = new Date(item.date).toLocaleDateString();
-                for (let i = 0; i < 1000; i++) {
-                  formatted.split('/').join('-');
-                }
-                const endTime = performance.now();
-                if (idx === 0) {
-                  performanceMonitor.logOperation('formatDate', 'AnalyticsDashboard', endTime - startTime, 'computation');
-                }
-                return formatted;
-              };
+              const formatted = new Date(item.date).toLocaleDateString();
               
               return (
               <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
-                <td style={{ padding: '12px' }}>{formatDate()}</td>
+                <td style={{ padding: '12px' }}>{formatted}</td>
                 <td style={{ padding: '12px', textAlign: 'right' }}>{item.visitors.toLocaleString()}</td>
                 <td style={{ padding: '12px', textAlign: 'right' }}>{item.pageViews.toLocaleString()}</td>
                 <td style={{ padding: '12px', textAlign: 'right' }}>{(item.bounceRate * 100).toFixed(1)}%</td>
