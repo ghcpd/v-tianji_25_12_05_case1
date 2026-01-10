@@ -1,0 +1,25 @@
+Prompt:
+
+Task:
+
+• Perform a full performance analysis of the existing frontend project.
+• Detect slow code paths, unnecessary re-renders, heavy synchronous operations on the main thread, inefficient loops, redundant API calls, excessive DOM manipulation, or other UI performance issues.
+• Use simulated profiling logs or timing measurements as evidence for the detected bottlenecks.
+
+• Modify and optimize the project code to fix the identified performance issues.
+• Produce fully runnable optimized code.
+• Do not break any existing functionality.
+• Ensure optimization focuses on reducing latency, decreasing blocking time, and improving runtime efficiency.
+
+• After optimization is complete, generate real, executable automated tests.
+• Tests must validate the optimized behavior.
+• All tests must run and pass.
+• Tests must be fully self-contained and runnable.
+
+• Provide a final summary that contains:
+– A clear explanation of the performance issues addressed and how they were improved.
+– A unified diff showing only the performance-related code changes (plain text unified diff format, no code block wrappers).
+
+Title: Frontend Performance Optimization and Verification
+Description:
+Analyze an existing pure frontend JavaScript/TypeScript project, identify performance bottlenecks, apply code optimizations, generate runnable automated tests to verify improvements, and produce a final summary including a unified diff of the performance-related code changes.

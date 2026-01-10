@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "vitest",
+    "test:watch": "vitest --watch",
+    "test:ci": "vitest --run"
   },
   "dependencies": {
     "next": "14.0.4",
@@ -19,7 +22,12 @@
     "@types/react-dom": "18.2.18",
     "typescript": "5.3.3",
     "eslint": "8.56.0",
-    "eslint-config-next": "14.0.4"
+    "eslint-config-next": "14.0.4",
+    "vitest": "latest",
+    "@testing-library/react": "latest",
+    "@testing-library/jest-dom": "latest",
+    "@types/testing-library__jest-dom": "latest",
+    "jsdom": "latest"
   }
 }
 
