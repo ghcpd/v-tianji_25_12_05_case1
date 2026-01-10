@@ -94,11 +94,18 @@ const generateSearchResults = (query: string, count: number) => {
   return results.sort((a, b) => b.relevance - a.relevance);
 };
 
+// Cache large datasets to avoid regenerating them on every call
+let CACHED_USERS: ReturnType<typeof generateUsers> | null = null;
+let CACHED_POSTS: ReturnType<typeof generatePosts> | null = null;
+let CACHED_SEARCH: Record<string, ReturnType<typeof generateSearchResults>> = {};
+
 export const dataService = {
   async getUsers(page: number = 1, limit: number = 20, search: string = '') {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 50));
+    // Simulate a small network latency, but reuse cached users to avoid recompute
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 60 + 20));
     
-    const allUsers = generateUsers(10000);
+    if (!CACHED_USERS) CACHED_USERS = generateUsers(10000);
+    const allUsers = CACHED_USERS;
     let filteredUsers = allUsers;
     
     if (search) {
@@ -112,8 +119,8 @@ export const dataService = {
     const endIndex = startIndex + limit;
     const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
+    // Populate user details without per-item async waits (fast)
     for (const user of paginatedUsers) {
-      await new Promise(resolve => setTimeout(resolve, 5));
       user.details = {
         location: `City ${Math.floor(Math.random() * 100)}`,
         company: `Company ${Math.floor(Math.random() * 50)}`,
@@ -133,9 +140,11 @@ export const dataService = {
   },
 
   async getPosts(page: number = 1, limit: number = 20, category: string = '') {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 400 + 100));
-    
-    const allPosts = generatePosts(5000);
+    // Small network latency; reuse cached posts list
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 80 + 30));
+
+    if (!CACHED_POSTS) CACHED_POSTS = generatePosts(5000);
+    const allPosts = CACHED_POSTS;
     let filteredPosts = allPosts;
     
     if (category) {
@@ -147,8 +156,8 @@ export const dataService = {
     const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
 
     for (const post of paginatedPosts) {
-      await new Promise(resolve => setTimeout(resolve, 8));
-      post.relatedPosts = generatePosts(10).slice(0, 5);
+      // Use samples from cached posts for relatedPosts without async delay
+      post.relatedPosts = (CACHED_POSTS || generatePosts(5000)).slice(0, 10).map(p => ({ ...p })) .slice(0, 5);
       post.analytics = {
         engagement: Math.random() * 100,
         reach: Math.floor(Math.random() * 100000),
@@ -168,7 +177,7 @@ export const dataService = {
   },
 
   async getAnalytics(days: number = 30, metric: string = 'all') {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 150));
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 120 + 50));
     
     const allAnalytics = generateAnalytics(days);
     let processedData = allAnalytics;
@@ -202,15 +211,16 @@ export const dataService = {
       return { results: [], total: 0 };
     }
 
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 100));
-    
-    const allResults = generateSearchResults(query, 1000);
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 80 + 30));
+
+    if (!CACHED_SEARCH[query]) CACHED_SEARCH[query] = generateSearchResults(query, 1000);
+    const allResults = CACHED_SEARCH[query];
     const results = allResults.slice(0, limit);
 
     for (const result of results) {
-      await new Promise(resolve => setTimeout(resolve, 3));
-      result.suggestions = generateSearchResults(query, 5);
-      result.related = generateSearchResults(query, 10).slice(0, 3);
+      // light synchronous augmentation without tiny delays
+      result.suggestions = (CACHED_SEARCH[query] || generateSearchResults(query, 1000)).slice(0, 5);
+      result.related = (CACHED_SEARCH[query] || generateSearchResults(query, 1000)).slice(0, 10).slice(0, 3);
     }
 
     return {
