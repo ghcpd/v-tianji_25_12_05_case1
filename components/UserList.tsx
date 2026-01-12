@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
 
@@ -113,15 +113,6 @@ export default function UserList({ onLoadComplete }: UserListProps) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
         {users.map((user) => {
-          const computeExpensiveValue = () => {
-            let sum = 0;
-            for (let i = 0; i < 100000; i++) {
-              sum += Math.sqrt(i) * Math.random();
-            }
-            return sum;
-          };
-          const expensiveValue = computeExpensiveValue();
-          
           return (
           <div
             key={user.id}

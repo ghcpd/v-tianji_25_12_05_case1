@@ -27,9 +27,8 @@ const api = {
 
       const endTime = performance.now();
       const latency = endTime - startTime;
-      const size = JSON.stringify(result).length;
 
-      performanceMonitor.logOperation('fetch', endpoint, latency, 'data', { size });
+      performanceMonitor.logOperation('fetch', endpoint, latency, 'data', {});
 
       return { data: result };
     } catch (error) {

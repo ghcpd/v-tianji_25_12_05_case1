@@ -1,3 +1,8 @@
+let cachedUsers: any[] | null = null;
+let cachedPosts: any[] | null = null;
+let cachedAnalytics: any[] | null = null;
+let cachedSearchResults: any[] | null = null;
+
 const generateUsers = (count: number) => {
   const users = [];
   for (let i = 0; i < count; i++) {
@@ -15,6 +20,7 @@ const generateUsers = (count: number) => {
       }
     });
   }
+  cachedUsers = users;
   return users;
 };
 
@@ -41,6 +47,7 @@ const generatePosts = (count: number) => {
       image: `https://picsum.photos/800/600?random=${i}`
     });
   }
+  cachedPosts = posts;
   return posts;
 };
 
@@ -71,6 +78,7 @@ const generateAnalytics = (days: number) => {
       }
     });
   }
+  cachedAnalytics = analytics;
   return analytics;
 };
 
@@ -91,20 +99,22 @@ const generateSearchResults = (query: string, count: number) => {
       }
     });
   }
-  return results.sort((a, b) => b.relevance - a.relevance);
+  cachedSearchResults = results.sort((a, b) => b.relevance - a.relevance);
+  return cachedSearchResults;
 };
 
 export const dataService = {
   async getUsers(page: number = 1, limit: number = 20, search: string = '') {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 50));
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 150 + 50));
     
-    const allUsers = generateUsers(10000);
+    const allUsers = cachedUsers || generateUsers(10000);
     let filteredUsers = allUsers;
     
     if (search) {
+      const lowerSearch = search.toLowerCase();
       filteredUsers = allUsers.filter(user => 
-        user.name.toLowerCase().includes(search.toLowerCase()) ||
-        user.email.toLowerCase().includes(search.toLowerCase())
+        user.name.toLowerCase().includes(lowerSearch) ||
+        user.email.toLowerCase().includes(lowerSearch)
       );
     }
 
@@ -112,14 +122,13 @@ export const dataService = {
     const endIndex = startIndex + limit;
     const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
 
-    for (const user of paginatedUsers) {
-      await new Promise(resolve => setTimeout(resolve, 5));
+    paginatedUsers.forEach(user => {
       user.details = {
         location: `City ${Math.floor(Math.random() * 100)}`,
         company: `Company ${Math.floor(Math.random() * 50)}`,
         skills: Array.from({ length: 10 }, (_, i) => `Skill ${i + 1}`)
       };
-    }
+    });
 
     return {
       users: paginatedUsers,
@@ -133,9 +142,9 @@ export const dataService = {
   },
 
   async getPosts(page: number = 1, limit: number = 20, category: string = '') {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 400 + 100));
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
     
-    const allPosts = generatePosts(5000);
+    const allPosts = cachedPosts || generatePosts(5000);
     let filteredPosts = allPosts;
     
     if (category) {
@@ -146,15 +155,14 @@ export const dataService = {
     const endIndex = startIndex + limit;
     const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
 
-    for (const post of paginatedPosts) {
-      await new Promise(resolve => setTimeout(resolve, 8));
+    paginatedPosts.forEach(post => {
       post.relatedPosts = generatePosts(10).slice(0, 5);
       post.analytics = {
         engagement: Math.random() * 100,
         reach: Math.floor(Math.random() * 100000),
         impressions: Math.floor(Math.random() * 500000)
       };
-    }
+    });
 
     return {
       posts: paginatedPosts,
@@ -168,27 +176,31 @@ export const dataService = {
   },
 
   async getAnalytics(days: number = 30, metric: string = 'all') {
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 150));
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 250 + 150));
     
-    const allAnalytics = generateAnalytics(days);
-    let processedData = allAnalytics;
+    const allAnalytics = cachedAnalytics || generateAnalytics(days);
+    const processedData = allAnalytics;
+
+    let totalVisitors = 0;
+    let totalPageViews = 0;
+    let totalBounceRate = 0;
+    let totalRevenue = 0;
+    let totalConversions = 0;
     
-    if (metric !== 'all') {
-      processedData = allAnalytics.map(item => {
-        const processed = { ...item };
-        for (let i = 0; i < 100; i++) {
-          processed[`computed_${i}`] = Math.random() * 1000;
-        }
-        return processed;
-      });
+    for (const item of processedData) {
+      totalVisitors += item.visitors;
+      totalPageViews += item.pageViews;
+      totalBounceRate += item.bounceRate;
+      totalRevenue += item.revenue;
+      totalConversions += item.conversions;
     }
 
     const aggregated = {
-      totalVisitors: processedData.reduce((sum, item) => sum + item.visitors, 0),
-      totalPageViews: processedData.reduce((sum, item) => sum + item.pageViews, 0),
-      avgBounceRate: processedData.reduce((sum, item) => sum + item.bounceRate, 0) / processedData.length,
-      totalRevenue: processedData.reduce((sum, item) => sum + item.revenue, 0),
-      totalConversions: processedData.reduce((sum, item) => sum + item.conversions, 0)
+      totalVisitors,
+      totalPageViews,
+      avgBounceRate: totalBounceRate / processedData.length,
+      totalRevenue,
+      totalConversions
     };
 
     return {
@@ -202,16 +214,15 @@ export const dataService = {
       return { results: [], total: 0 };
     }
 
-    await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 100));
+    await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
     
-    const allResults = generateSearchResults(query, 1000);
+    const allResults = cachedSearchResults || generateSearchResults(query, 1000);
     const results = allResults.slice(0, limit);
 
-    for (const result of results) {
-      await new Promise(resolve => setTimeout(resolve, 3));
+    results.forEach(result => {
       result.suggestions = generateSearchResults(query, 5);
       result.related = generateSearchResults(query, 10).slice(0, 3);
-    }
+    });
 
     return {
       results,

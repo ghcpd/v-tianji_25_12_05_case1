@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
 
@@ -126,21 +126,6 @@ export default function PostList({ onLoadComplete }: PostListProps) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
         {posts.map((post) => {
-          const processPostData = () => {
-            const startTime = performance.now();
-            const processedTags = post.tags.map(tag => {
-              let processed = '';
-              for (let i = 0; i < 1000; i++) {
-                processed += tag.toLowerCase();
-              }
-              return processed.substring(0, tag.length);
-            });
-            const endTime = performance.now();
-            performanceMonitor.logOperation('processPostData', 'PostList', endTime - startTime, 'computation');
-            return processedTags;
-          };
-          const processedTags = processPostData();
-          
           return (
           <div
             key={post.id}
@@ -190,7 +175,7 @@ export default function PostList({ onLoadComplete }: PostListProps) {
               <span style={{ background: '#667eea', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', marginRight: '5px' }}>
                 {post.category}
               </span>
-              {processedTags.slice(0, 3).map((tag, idx) => (
+              {post.tags.slice(0, 3).map((tag, idx) => (
                 <span key={idx} style={{ background: '#eee', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', marginRight: '5px' }}>
                   {tag}
                 </span>

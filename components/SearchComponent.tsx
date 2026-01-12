@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
 
@@ -111,18 +111,6 @@ export default function SearchComponent({ onLoadComplete }: SearchComponentProps
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
         {results.map((result) => {
-          const computeRelevance = () => {
-            const startTime = performance.now();
-            let relevance = result.relevance;
-            for (let i = 0; i < 5000; i++) {
-              relevance = Math.sqrt(relevance * Math.random());
-            }
-            const endTime = performance.now();
-            performanceMonitor.logOperation('computeRelevance', 'SearchComponent', endTime - startTime, 'computation');
-            return relevance;
-          };
-          const computedRelevance = computeRelevance();
-          
           return (
           <div
             key={result.id}
@@ -158,7 +146,7 @@ export default function SearchComponent({ onLoadComplete }: SearchComponentProps
             <div style={{ display: 'flex', gap: '15px', fontSize: '12px', color: '#888', marginTop: '10px' }}>
               <span>By: {result.metadata.author}</span>
               <span>{new Date(result.metadata.date).toLocaleDateString()}</span>
-              <span>Relevance: {(computedRelevance * 100).toFixed(1)}%</span>
+              <span>Relevance: {(result.relevance * 100).toFixed(1)}%</span>
             </div>
             <div style={{ marginTop: '10px' }}>
               {result.metadata.tags.slice(0, 5).map((tag, idx) => (

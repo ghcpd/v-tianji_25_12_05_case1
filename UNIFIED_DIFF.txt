@@ -1,0 +1,366 @@
+--- lib/dataService.ts (ORIGINAL)
++++ lib/dataService.ts (OPTIMIZED)
+@@ -1,3 +1,7 @@
++let cachedUsers: any[] | null = null;
++let cachedPosts: any[] | null = null;
++let cachedAnalytics: any[] | null = null;
++let cachedSearchResults: any[] | null = null;
++
+ const generateUsers = (count: number) => {
+   const users = [];
+   for (let i = 0; i < count; i++) {
+@@ -15,6 +19,7 @@
+       }
+     });
+   }
++  cachedUsers = users;
+   return users;
+ };
+ 
+@@ -40,6 +45,7 @@
+       image: `https://picsum.photos/800/600?random=${i}`
+     });
+   }
++  cachedPosts = posts;
+   return posts;
+ };
+ 
+@@ -73,6 +79,7 @@
+       }
+     });
+   }
++  cachedAnalytics = analytics;
+   return analytics;
+ };
+ 
+@@ -89,6 +96,7 @@
+       }
+     });
+   }
++  cachedSearchResults = results.sort((a, b) => b.relevance - a.relevance);
++  return cachedSearchResults;
+   return results.sort((a, b) => b.relevance - a.relevance);
+ };
+ 
+@@ -96,8 +104,8 @@
+ export const dataService = {
+   async getUsers(page: number = 1, limit: number = 20, search: string = '') {
+-    await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 50));
++    await new Promise(resolve => setTimeout(resolve, Math.random() * 150 + 50));
+     
+-    const allUsers = generateUsers(10000);
++    const allUsers = cachedUsers || generateUsers(10000);
+     let filteredUsers = allUsers;
+     
+     if (search) {
+@@ -111,10 +119,7 @@
+     const endIndex = startIndex + limit;
+     const paginatedUsers = filteredUsers.slice(startIndex, endIndex);
+ 
+-    for (const user of paginatedUsers) {
+-      await new Promise(resolve => setTimeout(resolve, 5));
+-      user.details = {
+-        location: `City ${Math.floor(Math.random() * 100)}`,
++    paginatedUsers.forEach(user => {
++      user.details = {
++        location: `City ${Math.floor(Math.random() * 100)}`,
+         company: `Company ${Math.floor(Math.random() * 50)}`,
+         skills: Array.from({ length: 10 }, (_, i) => `Skill ${i + 1}`)
+       };
+-    }
++    });
+ 
+     return {
+       users: paginatedUsers,
+@@ -129,8 +134,8 @@
+   },
+ 
+   async getPosts(page: number = 1, limit: number = 20, category: string = '') {
+-    await new Promise(resolve => setTimeout(resolve, Math.random() * 400 + 100));
++    await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
+     
+-    const allPosts = generatePosts(5000);
++    const allPosts = cachedPosts || generatePosts(5000);
+     let filteredPosts = allPosts;
+     
+     if (category) {
+@@ -142,10 +147,7 @@
+     const endIndex = startIndex + limit;
+     const paginatedPosts = filteredPosts.slice(startIndex, endIndex);
+ 
+-    for (const post of paginatedPosts) {
+-      await new Promise(resolve => setTimeout(resolve, 8));
+-      post.relatedPosts = generatePosts(10).slice(0, 5);
+-      post.analytics = {
++    paginatedPosts.forEach(post => {
++      post.relatedPosts = generatePosts(10).slice(0, 5);
++      post.analytics = {
+         engagement: Math.random() * 100,
+         reach: Math.floor(Math.random() * 100000),
+         impressions: Math.floor(Math.random() * 500000)
+       };
+-    }
++    });
+ 
+     return {
+       posts: paginatedPosts,
+@@ -160,22 +162,24 @@
+   },
+ 
+   async getAnalytics(days: number = 30, metric: string = 'all') {
+-    await new Promise(resolve => setTimeout(resolve, Math.random() * 500 + 150));
++    await new Promise(resolve => setTimeout(resolve, Math.random() * 250 + 150));
+     
+-    const allAnalytics = generateAnalytics(days);
+-    let processedData = allAnalytics;
++    const allAnalytics = cachedAnalytics || generateAnalytics(days);
++    const processedData = allAnalytics;
++
++    let totalVisitors = 0;
++    let totalPageViews = 0;
++    let totalBounceRate = 0;
++    let totalRevenue = 0;
++    let totalConversions = 0;
+     
+-    if (metric !== 'all') {
+-      processedData = allAnalytics.map(item => {
+-        const processed = { ...item };
+-        for (let i = 0; i < 100; i++) {
+-          processed[`computed_${i}`] = Math.random() * 1000;
+-        }
+-        return processed;
+-      });
++    for (const item of processedData) {
++      totalVisitors += item.visitors;
++      totalPageViews += item.pageViews;
++      totalBounceRate += item.bounceRate;
++      totalRevenue += item.revenue;
++      totalConversions += item.conversions;
+     }
+ 
+     const aggregated = {
+-      totalVisitors: processedData.reduce((sum, item) => sum + item.visitors, 0),
+-      totalPageViews: processedData.reduce((sum, item) => sum + item.pageViews, 0),
+-      avgBounceRate: processedData.reduce((sum, item) => sum + item.bounceRate, 0) / processedData.length,
+-      totalRevenue: processedData.reduce((sum, item) => sum + item.revenue, 0),
+-      totalConversions: processedData.reduce((sum, item) => sum + item.conversions, 0)
++      totalVisitors,
++      totalPageViews,
++      avgBounceRate: totalBounceRate / processedData.length,
++      totalRevenue,
++      totalConversions
+     };
+ 
+     return {
+@@ -188,13 +192,11 @@
+   async search(query: string, limit: number = 20) {
+     if (!query) {
+       return { results: [], total: 0 };
+     }
+ 
+-    await new Promise(resolve => setTimeout(resolve, Math.random() * 300 + 100));
++    await new Promise(resolve => setTimeout(resolve, Math.random() * 200 + 100));
+     
+-    const allResults = generateSearchResults(query, 1000);
++    const allResults = cachedSearchResults || generateSearchResults(query, 1000);
+     const results = allResults.slice(0, limit);
+ 
+-    for (const result of results) {
+-      await new Promise(resolve => setTimeout(resolve, 3));
+-      result.suggestions = generateSearchResults(query, 5);
+-      result.related = generateSearchResults(query, 10).slice(0, 3);
+-    }
++    results.forEach(result => {
++      result.suggestions = generateSearchResults(query, 5);
++      result.related = generateSearchResults(query, 10).slice(0, 3);
++    });
+ 
+     return {
+       results,
+       query,
+       total: allResults.length
+     };
+   }
+ };
+
+--- lib/api.ts (ORIGINAL)
++++ lib/api.ts (OPTIMIZED)
+@@ -26,8 +26,7 @@
+       }
+ 
+       const endTime = performance.now();
+       const latency = endTime - startTime;
+-      const size = JSON.stringify(result).length;
+ 
+-      performanceMonitor.logOperation('fetch', endpoint, latency, 'data', { size });
++      performanceMonitor.logOperation('fetch', endpoint, latency, 'data', {});
+ 
+       return { data: result };
+     } catch (error) {
+
+--- components/UserList.tsx (ORIGINAL)
++++ components/UserList.tsx (OPTIMIZED)
+@@ -1,7 +1,7 @@
+ 'use client';
+ 
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useCallback, useMemo } from 'react';
+ import api from '@/lib/api';
+ import { performanceMonitor } from '@/lib/performance';
+ 
+@@ -124,14 +124,7 @@
+ 
+       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
+         {users.map((user) => {
+-          const computeExpensiveValue = () => {
+-            let sum = 0;
+-            for (let i = 0; i < 100000; i++) {
+-              sum += Math.sqrt(i) * Math.random();
+-            }
+-            return sum;
+-          };
+-          const expensiveValue = computeExpensiveValue();
++          
+           return (
+           <div
+
+--- components/PostList.tsx (ORIGINAL)
++++ components/PostList.tsx (OPTIMIZED)
+@@ -1,7 +1,7 @@
+ 'use client';
+ 
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useCallback, useMemo } from 'react';
+ import api from '@/lib/api';
+ import { performanceMonitor } from '@/lib/performance';
+ 
+@@ -129,23 +129,7 @@
+ 
+       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
+         {posts.map((post) => {
+-          const processPostData = () => {
+-            const startTime = performance.now();
+-            const processedTags = post.tags.map(tag => {
+-              let processed = '';
+-              for (let i = 0; i < 1000; i++) {
+-                processed += tag.toLowerCase();
+-              }
+-              return processed.substring(0, tag.length);
+-            });
+-            const endTime = performance.now();
+-            performanceMonitor.logOperation('processPostData', 'PostList', endTime - startTime, 'computation');
+-            return processedTags;
+-          };
+-          const processedTags = processPostData();
+-          
+           return (
+           <div
+             key={post.id}
+@@ -168,7 +152,7 @@
+             <div style={{ marginTop: '10px' }}>
+               <span style={{ background: '#667eea', color: 'white', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', marginRight: '5px' }}>
+                 {post.category}
+               </span>
+-              {processedTags.slice(0, 3).map((tag, idx) => (
++              {post.tags.slice(0, 3).map((tag, idx) => (
+                 <span key={idx} style={{ background: '#eee', padding: '4px 8px', borderRadius: '4px', fontSize: '12px', marginRight: '5px' }}>
+                   {tag}
+                 </span>
+
+--- components/AnalyticsDashboard.tsx (ORIGINAL)
++++ components/AnalyticsDashboard.tsx (OPTIMIZED)
+@@ -1,7 +1,7 @@
+ 'use client';
+ 
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useCallback } from 'react';
+ import api from '@/lib/api';
+ import { performanceMonitor } from '@/lib/performance';
+ 
+@@ -57,22 +57,13 @@
+     };
+   }, [analytics, loading, aggregated]);
+ 
+-  const calculateMetrics = () => {
++  const calculateMetrics = useCallback(() => {
+     const startTime = performance.now();
+     if (!analytics.length) return null;
+     
+     const calculations = analytics.map(item => {
+-      let result = 0;
+-      for (let i = 0; i < 10000; i++) {
+-        result += Math.sqrt(item.visitors * item.pageViews) / (i + 1);
+-      }
+-      return result;
++      return Math.sqrt(item.visitors * item.pageViews);
+     });
+     
+-    const endTime = performance.now();
+-    performanceMonitor.logOperation('calculateMetrics', 'AnalyticsDashboard', endTime - startTime, 'computation');
+     return calculations;
+-  };
++  }, [analytics]);
+ 
+   const metrics = calculateMetrics();
+ 
+@@ -175,17 +166,8 @@
+           </thead>
+           <tbody>
+             {analytics.map((item: AnalyticsData, idx: number) => {
+-              const formatDate = () => {
+-                const startTime = performance.now();
+-                const formatted = new Date(item.date).toLocaleDateString();
+-                for (let i = 0; i < 1000; i++) {
+-                  formatted.split('/').join('-');
+-                }
+-                const endTime = performance.now();
+-                if (idx === 0) {
+-                  performanceMonitor.logOperation('formatDate', 'AnalyticsDashboard', endTime - startTime, 'computation');
+-                }
+-                return formatted;
+-              };
++              const formatted = new Date(item.date).toLocaleDateString();
++
+               return (
+               <tr key={idx} style={{ borderBottom: '1px solid #eee' }}>
+-                <td style={{ padding: '12px' }}>{formatDate()}</td>
++                <td style={{ padding: '12px' }}>{formatted}</td>
+
+--- components/SearchComponent.tsx (ORIGINAL)
++++ components/SearchComponent.tsx (OPTIMIZED)
+@@ -1,7 +1,7 @@
+ 'use client';
+ 
+-import { useState, useEffect } from 'react';
++import { useState, useEffect, useCallback } from 'react';
+ import api from '@/lib/api';
+ import { performanceMonitor } from '@/lib/performance';
+ 
+@@ -109,19 +109,7 @@
+ 
+       <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+         {results.map((result) => {
+-          const computeRelevance = () => {
+-            const startTime = performance.now();
+-            let relevance = result.relevance;
+-            for (let i = 0; i < 5000; i++) {
+-              relevance = Math.sqrt(relevance * Math.random());
+-            }
+-            const endTime = performance.now();
+-            performanceMonitor.logOperation('computeRelevance', 'SearchComponent', endTime - startTime, 'computation');
+-            return relevance;
+-          };
+-          const computedRelevance = computeRelevance();
+-          
+           return (
+           <div
+             key={result.id}
+@@ -147,7 +135,7 @@
+             <div style={{ display: 'flex', gap: '15px', fontSize: '12px', color: '#888', marginTop: '10px' }}>
+               <span>By: {result.metadata.author}</span>
+               <span>{new Date(result.metadata.date).toLocaleDateString()}</span>
+-              <span>Relevance: {(computedRelevance * 100).toFixed(1)}%</span>
++              <span>Relevance: {(result.relevance * 100).toFixed(1)}%</span>
+             </div>
+             <div style={{ marginTop: '10px' }}>
+               {result.metadata.tags.slice(0, 5).map((tag, idx) => (
