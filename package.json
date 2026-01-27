@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node node_test_runner.js",
+    "node-test": "node node_test_runner.js"
   },
   "dependencies": {
     "next": "14.0.4",
@@ -14,6 +16,8 @@
     "react-dom": "18.2.0"
   },
   "devDependencies": {
+    "vitest": "1.4.3",
+    "@types/node": "20.10.5",
     "@types/node": "20.10.5",
     "@types/react": "18.2.45",
     "@types/react-dom": "18.2.18",

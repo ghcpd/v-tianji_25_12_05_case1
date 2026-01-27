@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import api from '@/lib/api';
 import { performanceMonitor } from '@/lib/performance';
+import { processPostTags } from '@/lib/compute';
 
 interface Post {
   id: number;
@@ -126,20 +127,13 @@ export default function PostList({ onLoadComplete }: PostListProps) {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(350px, 1fr))', gap: '20px' }}>
         {posts.map((post) => {
-          const processPostData = () => {
-            const startTime = performance.now();
-            const processedTags = post.tags.map(tag => {
-              let processed = '';
-              for (let i = 0; i < 1000; i++) {
-                processed += tag.toLowerCase();
-              }
-              return processed.substring(0, tag.length);
-            });
-            const endTime = performance.now();
-            performanceMonitor.logOperation('processPostData', 'PostList', endTime - startTime, 'computation');
-            return processedTags;
-          };
-          const processedTags = processPostData();
+          const processedTags = useMemo(() => {
+            const start = performance.now();
+            const tags = processPostTags(post.tags);
+            const end = performance.now();
+            performanceMonitor.logOperation('processPostData', 'PostList', end - start, 'computation');
+            return tags;
+          }, [post.tags]);
           
           return (
           <div

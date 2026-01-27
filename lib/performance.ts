@@ -11,6 +11,7 @@ class PerformanceMonitor {
   private logs: PerformanceLog[] = [];
   private renderTimes: Map<string, number[]> = new Map();
   private threshold: number = 100;
+  private maxLogs: number = 1000;
 
   logOperation(operation: string, component: string, latency: number, type: PerformanceLog['type'] = 'computation', details?: any) {
     const log: PerformanceLog = {
@@ -22,6 +23,10 @@ class PerformanceMonitor {
       details
     };
     this.logs.push(log);
+    // Keep logs bounded to avoid memory growth and expensive operations
+    if (this.logs.length > this.maxLogs) {
+      this.logs.splice(0, this.logs.length - this.maxLogs);
+    }
     
     if (latency > this.threshold) {
       console.warn(`[PERFORMANCE WARNING] ${component}.${operation} exceeded threshold: ${latency}ms > ${this.threshold}ms`);
@@ -43,7 +48,7 @@ class PerformanceMonitor {
   }
 
   getLogs(): PerformanceLog[] {
-    return [...this.logs];
+    return this.logs.slice();
   }
 
   getLogsByComponent(component: string): PerformanceLog[] {
